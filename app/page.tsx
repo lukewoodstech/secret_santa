@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface Participant {
   id: string
@@ -14,6 +14,13 @@ interface Assignment {
   revealUrl: string
 }
 
+interface SavedList {
+  id: string
+  name: string
+  participants: Participant[]
+  createdAt: number
+}
+
 export default function Home() {
   const [participants, setParticipants] = useState<Participant[]>([])
   const [currentName, setCurrentName] = useState('')
@@ -22,6 +29,12 @@ export default function Home() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [openExclusions, setOpenExclusions] = useState<Set<string>>(new Set())
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [savedLists, setSavedLists] = useState<SavedList[]>([])
+  const [showSaveModal, setShowSaveModal] = useState(false)
+  const [listName, setListName] = useState('')
+  const [showLoadConfirm, setShowLoadConfirm] = useState<SavedList | null>(null)
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
 
   const addParticipant = () => {
     if (!currentName.trim()) {
@@ -94,11 +107,128 @@ export default function Home() {
     setCopiedId(id)
   }
 
+  // Load saved lists from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('secretSantaLists')
+      if (stored) {
+        try {
+          setSavedLists(JSON.parse(stored))
+        } catch (e) {
+          console.error('Error loading saved lists:', e)
+        }
+      }
+    }
+  }, [])
+
+  // Save list to localStorage
+  const saveList = () => {
+    if (!listName.trim()) {
+      setError('Please enter a list name')
+      return
+    }
+
+    // Get participants - they should still be in state even after generating assignments
+    const participantsToSave = participants.length > 0 ? participants : []
+    
+    if (participantsToSave.length === 0) {
+      setError('No participants to save')
+      return
+    }
+
+    const newList: SavedList = {
+      id: Date.now().toString(),
+      name: listName.trim(),
+      participants: participantsToSave.map(p => ({ ...p })),
+      createdAt: Date.now(),
+    }
+
+    const updatedLists = [...savedLists, newList]
+    setSavedLists(updatedLists)
+    localStorage.setItem('secretSantaLists', JSON.stringify(updatedLists))
+    setListName('')
+    setShowSaveModal(false)
+    setError(null)
+  }
+
+  // Load a saved list
+  const loadList = (list: SavedList) => {
+    if (participants.length > 0) {
+      setShowLoadConfirm(list)
+    } else {
+      setParticipants(list.participants.map(p => ({ ...p })))
+      setAssignments(null)
+      setOpenExclusions(new Set())
+      setError(null)
+    }
+  }
+
+  // Confirm load list
+  const confirmLoadList = (list: SavedList) => {
+    setParticipants(list.participants.map(p => ({ ...p })))
+    setAssignments(null)
+    setOpenExclusions(new Set())
+    setError(null)
+    setShowLoadConfirm(null)
+  }
+
+  // Clear current participants
+  const clearParticipants = () => {
+    if (participants.length > 0) {
+      setShowClearConfirm(true)
+    }
+  }
+
+  // Confirm clear
+  const confirmClear = () => {
+    setParticipants([])
+    setAssignments(null)
+    setOpenExclusions(new Set())
+    setError(null)
+    setShowClearConfirm(false)
+  }
+
+  // Go back to home/main view
+  const goHome = () => {
+    setParticipants([])
+    setAssignments(null)
+    setOpenExclusions(new Set())
+    setError(null)
+  }
+
+  // Check if we're in edit mode (have participants or viewing assignments)
+  const isEditMode = participants.length > 0 || assignments !== null
+
+  // Delete a saved list
+  const deleteList = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setShowDeleteConfirm(id)
+  }
+
+  // Confirm delete list
+  const confirmDeleteList = (id: string) => {
+    const updatedLists = savedLists.filter(l => l.id !== id)
+    setSavedLists(updatedLists)
+    localStorage.setItem('secretSantaLists', JSON.stringify(updatedLists))
+    setShowDeleteConfirm(null)
+  }
+
   return (
     <div className="min-h-screen py-12 px-4 bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-lg p-8 md:p-10">
+        <div className="bg-white rounded-2xl shadow-lg p-8 md:p-10 mb-6">
           <div className="text-center mb-10">
+            {isEditMode && (
+              <button
+                onClick={goHome}
+                className="mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Home
+              </button>
+            )}
             <h1 className="text-4xl font-bold mb-2 text-gray-900">
               Secret Santa
             </h1>
@@ -143,9 +273,17 @@ export default function Home() {
 
               {participants.length > 0 && (
                 <div className="mb-10">
-                  <h2 className="text-lg font-semibold mb-4 text-gray-800">
-                    Participants ({participants.length})
-                  </h2>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-gray-800">
+                      Participants ({participants.length})
+                    </h2>
+                    <button
+                      onClick={clearParticipants}
+                      className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                    >
+                      Clear All
+                    </button>
+                  </div>
                   <div className="space-y-3">
                     {participants.map((participant) => {
                       const otherParticipants = participants.filter(p => p.id !== participant.id)
@@ -252,9 +390,18 @@ export default function Home() {
                   </svg>
                 </div>
                 <h2 className="text-2xl font-bold mb-2 text-gray-900">Assignments Generated!</h2>
-                <p className="text-gray-600 text-sm">
+                <p className="text-gray-600 text-sm mb-4">
                   Share each person's unique link. They'll only see their own assignment.
                 </p>
+                <button
+                  onClick={() => setShowSaveModal(true)}
+                  className="px-6 py-2.5 text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors flex items-center gap-2 mx-auto"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                  </svg>
+                  Save This List
+                </button>
               </div>
               
               <div className="space-y-3 mb-8">
@@ -296,18 +443,198 @@ export default function Home() {
               </div>
 
               <button
-                onClick={() => {
-                  setAssignments(null)
-                  setParticipants([])
-                  setOpenExclusions(new Set())
-                }}
+                onClick={goHome}
                 className="w-full bg-gray-100 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 font-medium transition-all"
               >
                 Start Over
               </button>
             </div>
           )}
+
+          {/* Save Modal */}
+          {showSaveModal && (
+            <div 
+              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+              onClick={() => {
+                setShowSaveModal(false)
+                setListName('')
+                setError(null)
+              }}
+            >
+              <div 
+                className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 className="text-xl font-bold mb-4 text-gray-900">Save Participant List</h3>
+                <div className="mb-4">
+                  <label htmlFor="listName" className="block text-sm font-medium text-gray-700 mb-2">
+                    List Name
+                  </label>
+                  <input
+                    type="text"
+                    id="listName"
+                    value={listName}
+                    onChange={(e) => setListName(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        saveList()
+                      }
+                    }}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 placeholder-gray-400"
+                    placeholder="e.g., Family 2024, Work Team"
+                    autoFocus
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowSaveModal(false)
+                      setListName('')
+                      setError(null)
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 font-medium transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={saveList}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium transition-all"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Load Confirmation Modal */}
+          {showLoadConfirm && (
+            <div 
+              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+              onClick={() => setShowLoadConfirm(null)}
+            >
+              <div 
+                className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 className="text-xl font-bold mb-2 text-gray-900">Load Saved List?</h3>
+                <p className="text-gray-600 text-sm mb-6">
+                  This will replace your current {participants.length} participant{participants.length !== 1 ? 's' : ''}. Are you sure you want to continue?
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowLoadConfirm(null)}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 font-medium transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => confirmLoadList(showLoadConfirm)}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium transition-all"
+                  >
+                    Load List
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Clear Confirmation Modal */}
+          {showClearConfirm && (
+            <div 
+              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+              onClick={() => setShowClearConfirm(false)}
+            >
+              <div 
+                className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 className="text-xl font-bold mb-2 text-gray-900">Clear All Participants?</h3>
+                <p className="text-gray-600 text-sm mb-6">
+                  This will remove all {participants.length} participant{participants.length !== 1 ? 's' : ''} and their exclusions. This action cannot be undone.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowClearConfirm(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 font-medium transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmClear}
+                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 font-medium transition-all"
+                  >
+                    Clear All
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Delete List Confirmation Modal */}
+          {showDeleteConfirm && (
+            <div 
+              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+              onClick={() => setShowDeleteConfirm(null)}
+            >
+              <div 
+                className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 className="text-xl font-bold mb-2 text-gray-900">Delete Saved List?</h3>
+                <p className="text-gray-600 text-sm mb-6">
+                  This will permanently delete "{savedLists.find(l => l.id === showDeleteConfirm)?.name}". This action cannot be undone.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowDeleteConfirm(null)}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 font-medium transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => confirmDeleteList(showDeleteConfirm)}
+                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 font-medium transition-all"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Saved Lists Widget - Only show when not in edit mode */}
+        {!isEditMode && savedLists.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <h2 className="text-lg font-semibold mb-4 text-gray-800">Saved Lists</h2>
+            <div className="space-y-2">
+              {savedLists.map((list) => (
+                <div
+                  key={list.id}
+                  onClick={() => loadList(list)}
+                  className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50/30 cursor-pointer transition-all flex items-center justify-between"
+                >
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-900 mb-1 truncate">{list.name}</h3>
+                    <p className="text-xs text-gray-500">
+                      {list.participants.length} participant{list.participants.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  <button
+                    onClick={(e) => deleteList(list.id, e)}
+                    className="ml-4 text-gray-400 hover:text-red-600 hover:shadow-md transition-all flex-shrink-0 p-1 rounded"
+                    title="Delete list"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
