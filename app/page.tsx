@@ -21,6 +21,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [openExclusions, setOpenExclusions] = useState<Set<string>>(new Set())
+  const [copiedId, setCopiedId] = useState<string | null>(null)
 
   const addParticipant = () => {
     if (!currentName.trim()) {
@@ -87,9 +88,10 @@ export default function Home() {
     }
   }
 
-  const copyLink = (url: string) => {
+  const copyLink = (url: string, id: string) => {
     const fullUrl = `${window.location.origin}${url}`
     navigator.clipboard.writeText(fullUrl)
+    setCopiedId(id)
   }
 
   return (
@@ -269,10 +271,23 @@ export default function Home() {
                           <p className="text-xs text-gray-500 break-all font-mono">{fullUrl}</p>
                         </div>
                         <button
-                          onClick={() => copyLink(assignment.revealUrl)}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm font-medium transition-all shadow-sm hover:shadow-md whitespace-nowrap flex-shrink-0"
+                          onClick={() => copyLink(assignment.revealUrl, id)}
+                          className={`px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 text-sm font-medium transition-all shadow-sm whitespace-nowrap flex-shrink-0 flex items-center gap-2 ${
+                            copiedId === id
+                              ? 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500'
+                              : 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 hover:shadow-md'
+                          }`}
                         >
-                          Copy
+                          {copiedId === id ? (
+                            <>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              Copied
+                            </>
+                          ) : (
+                            'Copy'
+                          )}
                         </button>
                       </div>
                     </div>

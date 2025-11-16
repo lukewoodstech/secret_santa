@@ -1,4 +1,5 @@
 // Secret Santa assignment algorithm
+import { encodeAssignment } from './encode'
 
 interface Participant {
   id: string
@@ -99,10 +100,15 @@ export function generateAssignments(
         const assignedToId = assignment.get(participant.id)!
         const assignedTo = participants.find(p => p.id === assignedToId)!
         
+        const encoded = encodeAssignment({
+          name: participant.name,
+          assignedTo: assignedTo.name,
+        })
+        
         result[participant.id] = {
           name: participant.name,
           assignedTo: assignedTo.name,
-          revealUrl: `/reveal/${participant.id}`,
+          revealUrl: `/reveal/${encoded}`,
         }
       }
       

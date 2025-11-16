@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateAssignments } from '@/lib/assignment'
-import { storeAssignments } from '@/lib/storage'
 import { nanoid } from 'nanoid'
 
 interface ParticipantInput {
@@ -43,9 +42,6 @@ export async function POST(request: NextRequest) {
 
     // Generate assignments
     const assignments = generateAssignments(participantsWithExclusionIds)
-
-    // Store assignments
-    storeAssignments(assignments)
 
     return NextResponse.json({ assignments })
   } catch (error) {

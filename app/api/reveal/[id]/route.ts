@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAssignment } from '@/lib/storage'
+import { decodeAssignment } from '@/lib/encode'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const assignment = getAssignment(params.id)
+    const assignment = decodeAssignment(params.id)
 
     if (!assignment) {
       return NextResponse.json(
@@ -15,7 +15,11 @@ export async function GET(
       )
     }
 
-    return NextResponse.json(assignment)
+    return NextResponse.json({
+      name: assignment.name,
+      assignedTo: assignment.assignedTo,
+      revealUrl: `/reveal/${params.id}`,
+    })
   } catch (error) {
     console.error('Error fetching assignment:', error)
     return NextResponse.json(
