@@ -93,69 +93,70 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen py-12 px-4">
-      <div className="max-w-3xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">
-            🎅 Secret Santa Generator
-          </h1>
+    <div className="min-h-screen py-12 px-4 bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white rounded-2xl shadow-lg p-8 md:p-10">
+          <div className="text-center mb-10">
+            <h1 className="text-4xl font-bold mb-2 text-gray-900">
+              Secret Santa
+            </h1>
+            <p className="text-gray-500 text-sm">Generate gift exchange assignments</p>
+          </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
-              {error}
+            <div className="bg-red-50 border-l-4 border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+              <p className="text-sm font-medium">{error}</p>
             </div>
           )}
 
           {!assignments ? (
             <>
-              <div className="mb-8">
-                <h2 className="text-xl font-semibold mb-4 text-gray-700">Add Participants</h2>
-                
+              <div className="mb-10">
                 <div className="space-y-4">
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                      Name
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      value={currentName}
-                      onChange={(e) => setCurrentName(e.target.value)}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          addParticipant()
-                        }
-                      }}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Enter participant name"
-                    />
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        id="name"
+                        value={currentName}
+                        onChange={(e) => setCurrentName(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            addParticipant()
+                          }
+                        }}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 placeholder-gray-400"
+                        placeholder="Enter participant name"
+                      />
+                    </div>
+                    <button
+                      onClick={addParticipant}
+                      className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium transition-all shadow-sm hover:shadow-md"
+                    >
+                      Add
+                    </button>
                   </div>
-
-                  <button
-                    onClick={addParticipant}
-                    className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium transition-colors"
-                  >
-                    Add Person
-                  </button>
                 </div>
               </div>
 
               {participants.length > 0 && (
-                <div className="mb-8">
-                  <h2 className="text-xl font-semibold mb-4 text-gray-700">Participants</h2>
-                  <div className="space-y-4">
+                <div className="mb-10">
+                  <h2 className="text-lg font-semibold mb-4 text-gray-800">
+                    Participants ({participants.length})
+                  </h2>
+                  <div className="space-y-3">
                     {participants.map((participant) => {
                       const otherParticipants = participants.filter(p => p.id !== participant.id)
                       return (
                         <div
                           key={participant.id}
-                          className="bg-gray-50 p-4 rounded-md border border-gray-200"
+                          className="bg-gray-50/50 p-5 rounded-xl border border-gray-200/60 hover:border-gray-300 transition-all"
                         >
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="font-medium text-gray-800">{participant.name}</span>
+                          <div className="flex items-center justify-between mb-4">
+                            <span className="font-semibold text-gray-900">{participant.name}</span>
                             <button
                               onClick={() => removeParticipant(participant.id)}
-                              className="text-red-600 hover:text-red-800 text-sm font-medium"
+                              className="text-gray-400 hover:text-red-600 text-sm font-medium transition-colors"
                             >
                               Remove
                             </button>
@@ -173,13 +174,17 @@ export default function Home() {
                                   }
                                   setOpenExclusions(newOpen)
                                 }}
-                                className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                               >
-                                <span>
-                                  Exclusions {participant.exclusions.length > 0 && `(${participant.exclusions.length} selected)`}
+                                <span className="text-gray-700">
+                                  Exclusions {participant.exclusions.length > 0 && (
+                                    <span className="text-blue-600 font-semibold">
+                                      ({participant.exclusions.length})
+                                    </span>
+                                  )}
                                 </span>
                                 <svg
-                                  className={`w-4 h-4 transition-transform ${openExclusions.has(participant.id) ? 'transform rotate-180' : ''}`}
+                                  className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${openExclusions.has(participant.id) ? 'transform rotate-180' : ''}`}
                                   fill="none"
                                   stroke="currentColor"
                                   viewBox="0 0 24 24"
@@ -188,33 +193,35 @@ export default function Home() {
                                 </svg>
                               </button>
                               {openExclusions.has(participant.id) && (
-                                <div className="mt-2 border border-gray-300 rounded-md p-3 bg-white">
-                                  {otherParticipants.map((other) => (
-                                    <label key={other.id} className="flex items-center space-x-2 py-1 cursor-pointer hover:bg-gray-50 px-2 rounded">
-                                      <input
-                                        type="checkbox"
-                                        checked={participant.exclusions.includes(other.name)}
-                                        onChange={(e) => {
-                                          const newExclusions = e.target.checked
-                                            ? [...participant.exclusions, other.name]
-                                            : participant.exclusions.filter(e => e !== other.name)
-                                          setParticipants(participants.map(p => 
-                                            p.id === participant.id 
-                                              ? { ...p, exclusions: newExclusions }
-                                              : p
-                                          ))
-                                          setAssignments(null)
-                                        }}
-                                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                      />
-                                      <span className="text-sm text-gray-700">{other.name}</span>
-                                    </label>
-                                  ))}
+                                <div className="mt-3 border border-gray-200 rounded-lg p-3 bg-white">
+                                  <div className="space-y-1">
+                                    {otherParticipants.map((other) => (
+                                      <label key={other.id} className="flex items-center space-x-3 py-2 px-2 cursor-pointer hover:bg-gray-50 rounded-md transition-colors">
+                                        <input
+                                          type="checkbox"
+                                          checked={participant.exclusions.includes(other.name)}
+                                          onChange={(e) => {
+                                            const newExclusions = e.target.checked
+                                              ? [...participant.exclusions, other.name]
+                                              : participant.exclusions.filter(e => e !== other.name)
+                                            setParticipants(participants.map(p => 
+                                              p.id === participant.id 
+                                                ? { ...p, exclusions: newExclusions }
+                                                : p
+                                            ))
+                                            setAssignments(null)
+                                          }}
+                                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2"
+                                        />
+                                        <span className="text-sm text-gray-700">{other.name}</span>
+                                      </label>
+                                    ))}
+                                  </div>
                                 </div>
                               )}
                               {participant.exclusions.length > 0 && !openExclusions.has(participant.id) && (
-                                <p className="text-xs text-gray-500 mt-1">
-                                  Excludes: {participant.exclusions.join(', ')}
+                                <p className="text-xs text-gray-500 mt-2 ml-1">
+                                  Excludes: <span className="font-medium">{participant.exclusions.join(', ')}</span>
                                 </p>
                               )}
                             </div>
@@ -229,36 +236,43 @@ export default function Home() {
               <button
                 onClick={generateAssignments}
                 disabled={participants.length < 3 || isGenerating}
-                className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 font-medium transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3.5 px-6 rounded-lg hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-semibold transition-all shadow-md hover:shadow-lg disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed disabled:shadow-none"
               >
                 {isGenerating ? 'Generating...' : 'Generate Assignments'}
               </button>
             </>
           ) : (
             <div>
-              <h2 className="text-xl font-semibold mb-4 text-gray-700">Assignments Generated!</h2>
-              <p className="text-gray-600 mb-6">
-                Share each person's unique link with them. They'll only see their own assignment.
-              </p>
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h2 className="text-2xl font-bold mb-2 text-gray-900">Assignments Generated!</h2>
+                <p className="text-gray-600 text-sm">
+                  Share each person's unique link. They'll only see their own assignment.
+                </p>
+              </div>
               
-              <div className="space-y-4">
+              <div className="space-y-3 mb-8">
                 {Object.entries(assignments).map(([id, assignment]) => {
                   const fullUrl = `${window.location.origin}${assignment.revealUrl}`
                   return (
                     <div
                       key={id}
-                      className="bg-gray-50 p-4 rounded-md border border-gray-200"
+                      className="bg-gray-50/50 p-5 rounded-xl border border-gray-200/60 hover:border-gray-300 transition-all"
                     >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-gray-800">{assignment.name}</p>
-                          <p className="text-sm text-gray-600 mt-1 break-all">{fullUrl}</p>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-gray-900 mb-1">{assignment.name}</p>
+                          <p className="text-xs text-gray-500 break-all font-mono">{fullUrl}</p>
                         </div>
                         <button
                           onClick={() => copyLink(assignment.revealUrl)}
-                          className="ml-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm font-medium transition-colors whitespace-nowrap"
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm font-medium transition-all shadow-sm hover:shadow-md whitespace-nowrap flex-shrink-0"
                         >
-                          Copy Link
+                          Copy
                         </button>
                       </div>
                     </div>
@@ -270,8 +284,9 @@ export default function Home() {
                 onClick={() => {
                   setAssignments(null)
                   setParticipants([])
+                  setOpenExclusions(new Set())
                 }}
-                className="w-full mt-6 bg-gray-600 text-white py-3 px-4 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 font-medium transition-colors"
+                className="w-full bg-gray-100 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 font-medium transition-all"
               >
                 Start Over
               </button>
